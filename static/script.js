@@ -78,46 +78,51 @@ function updateHeatmap() {
 }
 
 // Initialize Heatmap Chart.js
-const ctx = document.getElementById('liquidationHeatmap').getContext('2d');
+const canvas = document.getElementById('liquidationHeatmap');
+if (canvas) {
+    const ctx = canvas.getContext('2d');
 
-const chart = new Chart(ctx, {
-    type: 'matrix',
-    data: {
-        datasets: [{
-            label: 'Liquidation Heatmap',
-            data: [],
-            backgroundColor(context) {
-                const value = context.dataset.data[context.dataIndex].value;
-                return `rgba(255, 0, 0, ${Math.min(value / 10000, 1)})`;  // Higher liquidations = darker red
-            },
-            width(context) {
-                return 10; // Adjust size of heatmap cells
-            },
-            height(context) {
-                return 10;
-            }
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            x: { type: 'timeseries', time: { unit: 'minute' } },
-            y: { title: { display: true, text: 'Price (USDT)' } }
+    var chart = new Chart(ctx, {
+        type: 'matrix',
+        data: {
+            datasets: [{
+                label: 'Liquidation Heatmap',
+                data: [],
+                backgroundColor(context) {
+                    const value = context.dataset.data[context.dataIndex].value;
+                    return `rgba(255, 0, 0, ${Math.min(value / 10000, 1)})`;  // Higher liquidations = darker red
+                },
+                width(context) {
+                    return 10; // Adjust size of heatmap cells
+                },
+                height(context) {
+                    return 10;
+                }
+            }]
         },
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    title: function(tooltipItems) {
-                        return `Time: ${tooltipItems[0].raw.x}`;
-                    },
-                    label: function(tooltipItem) {
-                        return `Price: ${tooltipItem.raw.y} USDT, Liquidation: ${tooltipItem.raw.value}`;
+        options: {
+            responsive: true,
+            scales: {
+                x: { type: 'timeseries', time: { unit: 'minute' } },
+                y: { title: { display: true, text: 'Price (USDT)' } }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            return `Time: ${tooltipItems[0].raw.x}`;
+                        },
+                        label: function(tooltipItem) {
+                            return `Price: ${tooltipItem.raw.y} USDT, Liquidation: ${tooltipItem.raw.value}`;
+                        }
                     }
                 }
             }
         }
-    }
-});
+    });
 
-// Start WebSocket connection
-connectWebSocket();
+    // Start WebSocket connection
+    connectWebSocket();
+} else {
+    console.error("Canvas element with id 'liquidationHeatmap' not found!");
+}
