@@ -1,4 +1,11 @@
-body { font-family: Arial, sans-serif; text-align: center; }
-table { width: 80%; margin: 20px auto; border-collapse: collapse; }
-th, td { border: 1px solid #ddd; padding: 10px; }
-th { background-color: #f4f4f4; }
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+}
+
+canvas {
+    max-width: 800px;
+    margin: 20px auto;
+    background: white;
+}
