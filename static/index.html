@@ -3,24 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Bybit Liquidations</title>
+    <title>Bybit Liquidation Heatmap</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Live Bybit Liquidations</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Symbol</th>
-                <th>Side</th>
-                <th>Size</th>
-                <th>Price</th>
-            </tr>
-        </thead>
-        <tbody id="liquidationTable"></tbody>
-    </table>
-
+    <h1>Bybit Live Liquidation Tracker</h1>
+    <canvas id="liquidationHeatmap"></canvas>
     <script src="script.js"></script>
 </body>
 </html>
