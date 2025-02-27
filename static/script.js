@@ -1,37 +1,49 @@
+// Ensure window.ethereum doesn't interfere
+if (typeof window.ethereum !== "undefined") {
+    console.log("[Info] Web3 extension detected (MetaMask). Ignoring Web3...");
+    delete window.ethereum;
+}
+
 const BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear";
 const SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 let ws;
-
+let isConnected = false;
 let liquidationHeatmap = {};  // Stores liquidation data for heatmap
 const PRICE_BUCKET_SIZE = 5;  // Group price levels into $5 buckets
 
 function connectWebSocket() {
-    ws = new WebSocket(BYBIT_WS_URL);
+    try {
+        ws = new WebSocket(BYBIT_WS_URL);
 
-    ws.onopen = () => {
-        console.log("[WebSocket] Connected. Subscribing to liquidation data...");
-        const subscribeMsg = {
-            op: "subscribe",
-            args: SYMBOLS.map(symbol => `allLiquidation.${symbol}`)
+        ws.onopen = () => {
+            console.log("[WebSocket] Connected. Subscribing to liquidation data...");
+            isConnected = true;
+            ws.send(JSON.stringify({
+                op: "subscribe",
+                args: SYMBOLS.map(symbol => `allLiquidation.${symbol}`)
+            }));
         };
-        ws.send(JSON.stringify(subscribeMsg));
-    };
 
-    ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message.data && Array.isArray(message.data)) {
-            processLiquidationData(message.data);
-        }
-    };
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.data && Array.isArray(message.data)) {
+                processLiquidationData(message.data);
+            }
+        };
 
-    ws.onclose = () => {
-        console.warn("[WebSocket] Disconnected. Reconnecting in 3 seconds...");
-        setTimeout(connectWebSocket, 3000);
-    };
+        ws.onclose = () => {
+            console.warn("[WebSocket] Disconnected. Reconnecting in 3s...");
+            isConnected = false;
+            setTimeout(connectWebSocket, 3000);
+        };
 
-    ws.onerror = (error) => {
-        console.error("[WebSocket] Error:", error);
-    };
+        ws.onerror = (error) => {
+            console.error("[WebSocket] Error:", error);
+        };
+
+    } catch (error) {
+        console.error("[WebSocket] Connection failed:", error);
+    }
 }
 
 // Process liquidation data into heatmap format
@@ -78,9 +90,19 @@ function updateHeatmap() {
 }
 
 // Initialize Heatmap Chart.js
-const canvas = document.getElementById('liquidationHeatmap');
-if (canvas) {
+document.addEventListener("DOMContentLoaded", function () {
+    const canvas = document.getElementById('liquidationHeatmap');
+    
+    if (!canvas) {
+        console.error("[Error] Canvas element 'liquidationHeatmap' not found!");
+        return;
+    }
+
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error("[Error] Could not get 2D context for canvas!");
+        return;
+    }
 
     var chart = new Chart(ctx, {
         type: 'matrix',
@@ -90,14 +112,10 @@ if (canvas) {
                 data: [],
                 backgroundColor(context) {
                     const value = context.dataset.data[context.dataIndex].value;
-                    return `rgba(255, 0, 0, ${Math.min(value / 10000, 1)})`;  // Higher liquidations = darker red
+                    return `rgba(255, 0, 0, ${Math.min(value / 10000, 1)})`;  
                 },
-                width(context) {
-                    return 10; // Adjust size of heatmap cells
-                },
-                height(context) {
-                    return 10;
-                }
+                width: () => 10, 
+                height: () => 10
             }]
         },
         options: {
@@ -109,20 +127,14 @@ if (canvas) {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        title: function(tooltipItems) {
-                            return `Time: ${tooltipItems[0].raw.x}`;
-                        },
-                        label: function(tooltipItem) {
-                            return `Price: ${tooltipItem.raw.y} USDT, Liquidation: ${tooltipItem.raw.value}`;
-                        }
+                        title: tooltipItems => `Time: ${tooltipItems[0].raw.x}`,
+                        label: tooltipItem => `Price: ${tooltipItem.raw.y} USDT, Liquidation: ${tooltipItem.raw.value}`
                     }
                 }
             }
         }
     });
 
-    // Start WebSocket connection
+    // Connect WebSocket after chart is ready
     connectWebSocket();
-} else {
-    console.error("Canvas element with id 'liquidationHeatmap' not found!");
-}
+});
