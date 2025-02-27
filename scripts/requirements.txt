@@ -1,3 +1,0 @@
-flask
-websockets
-websocket-client
